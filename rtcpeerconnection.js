@@ -7,7 +7,7 @@ const transform = require('./transform');
 const origRTCPeerConnection = window.RTCPeerConnection;
 window.RTCPeerConnection = function(pcConfig, pcConstraints) {
     const pc = new origRTCPeerConnection(pcConfig, pcConstraints);
-    if (pcConfig && pcConfig.sdpSemantics) {
+    if (pcConfig && pcConfig.sdpSemantics === 'jingle') {
         pc._sdpSemantics = pcConfig.sdpSemantics;
         delete pcConfig.sdpSemantics;
     }
