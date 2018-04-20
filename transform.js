@@ -33,6 +33,7 @@ function mediaSectionToJSON(mediaSection, sessionPart) {
         m.rtpParameters = SDPUtils.parseRtpParameters(mediaSection, sessionPart);
         m.rtcpParameters = SDPUtils.parseRtcpParameters(mediaSection, sessionPart);
         m.stream = SDPUtils.parseMsid(mediaSection); // may be undefined.
+    } else if (kind === 'application' && m.protocol === 'DTLS/SCTP') {
     }
     m.candidates = SDPUtils.matchPrefix(mediaSection, 'a=candidate:')
         .map(SDPUtils.parseCandidate);
@@ -43,11 +44,19 @@ function toSDP(json) {
     let sdp = SDPUtils.writeSessionBoilerplate(json.sessionId, json.sessionVersion);
     sdp += 'a=msid-semantic:WMS *\r\n';
     sdp += json.media.map((m) => {
-        return SDPUtils.writeRtpDescription(m.kind, m.rtpParameters) +
-            'a=' + (m.direction || 'sendrecv') + '\r\n' +
+        var str = '';
+        if (m.kind === 'application' && m.protocol === 'DTLS/SCTP') {
+            str += 'm=application 9 DTLS/SCTP 5000\r\n' +
+                'c=IN IP4 0.0.0.0\r\n' +
+                'a=sctpmap:5000 webrtc-datachannel 256\r\n';
+        } else {
+            str += SDPUtils.writeRtpDescription(m.kind, m.rtpParameters) +
+                'a=' + (m.direction || 'sendrecv') + '\r\n' +
+                (m.stream ? 'a=msid:' + m.stream.stream + ' ' + m.stream.track + '\r\n' : '') +
+                (m.rtcpParameters.cname ? 'a=ssrc:' + m.rtcpParameters.ssrc + ' cname:' + m.rtcpParameters.cname + '\r\n' : '');
+        }
+        return str +
             'a=mid:' + m.mid + '\r\n' +
-            (m.stream ? 'a=msid:' + m.stream.stream + ' ' + m.stream.track + '\r\n' : '') +
-            (m.rtcpParameters.cname ? 'a=ssrc:' + m.rtcpParameters.ssrc + ' cname:' + m.rtcpParameters.cname + '\r\n' : '') +
             SDPUtils.writeIceParameters(m.iceParameters) +
             SDPUtils.writeDtlsParameters(m.dtlsParameters, m.setup) +
             (m.candidates && m.candidates.length ? m.candidates.map(SDPUtils.writeCandidate).join('\r\n') + '\r\n' : '');
