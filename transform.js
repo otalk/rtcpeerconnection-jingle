@@ -5,7 +5,17 @@ function toJSON(sdp) {
     const sessionPart = mediaSections.shift();
     const description = {
         media: [],
+        groups: [],
     };
+    SDPUtils.matchPrefix(sessionPart, 'a=group:').forEach((groupLine) => {
+        const parts = groupLine.split(' ');
+        const semantics = parts.shift().substr(8);
+        description.groups.push({
+            semantics,
+            mids: parts,
+        });
+    });
+
     mediaSections.forEach((mediaSection) => {
         const mediaJSON = mediaSectionToJSON(mediaSection, sessionPart);
         description.media.push(mediaJSON);
@@ -43,6 +53,11 @@ function mediaSectionToJSON(mediaSection, sessionPart) {
 function toSDP(json) {
     let sdp = SDPUtils.writeSessionBoilerplate(json.sessionId, json.sessionVersion);
     sdp += 'a=msid-semantic:WMS *\r\n';
+    if (json.groups.length) {
+        sdp += json.groups.map((g) => {
+            return 'a=group:' + g.semantics + ' ' + g.mids;
+        }).join('\r\n') + '\r\n';
+    }
     sdp += json.media.map((m) => {
         var str = '';
         if (m.kind === 'application' && m.protocol === 'DTLS/SCTP') {
