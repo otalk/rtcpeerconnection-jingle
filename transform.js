@@ -60,16 +60,24 @@ function toSDP(json) {
         }).join('\r\n') + '\r\n';
     }
     sdp += json.media.map((m) => {
-        var str = '';
+        let str = '';
         if (m.kind === 'application' && m.protocol === 'DTLS/SCTP') {
             str += 'm=application 9 DTLS/SCTP 5000\r\n' +
                 'c=IN IP4 0.0.0.0\r\n' +
                 'a=sctpmap:5000 webrtc-datachannel 256\r\n';
         } else {
             str += SDPUtils.writeRtpDescription(m.kind, m.rtpParameters) +
-                'a=' + (m.direction || 'sendrecv') + '\r\n' +
-                (m.stream ? 'a=msid:' + m.stream.stream + ' ' + m.stream.track + '\r\n' : '') +
-                (m.rtcpParameters.cname ? 'a=ssrc:' + m.rtcpParameters.ssrc + ' cname:' + m.rtcpParameters.cname + '\r\n' : '');
+                'a=' + (m.direction || 'sendrecv') + '\r\n';
+            if (m.stream) {
+                str += 'a=msid:' + m.stream.stream + ' ' + m.stream.track + '\r\n';
+            }
+            if (m.rtcpParameters.cname) {
+                str += 'a=ssrc:' + m.rtcpParameters.ssrc + ' cname:' + m.rtcpParameters.cname + '\r\n';
+                if (m.rtpEncodingParameters[0].rtx) {
+                    str += 'a=ssrc-group:FID ' + m.rtpEncodingParameters[0].ssrc + ' ' + m.rtpEncodingParameters[0].rtx.ssrc  + '\r\n' +
+                        'a=ssrc:' + m.rtpEncodingParameters[0].rtx.ssrc + ' cname:' + m.rtcpParameters.cname + '\r\n';
+                }
+            }
         }
         return str +
             'a=mid:' + m.mid + '\r\n' +
