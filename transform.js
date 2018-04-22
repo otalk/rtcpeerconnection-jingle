@@ -41,6 +41,7 @@ function mediaSectionToJSON(mediaSection, sessionPart) {
     }
     if (kind === 'audio' || kind === 'video') {
         m.rtpParameters = SDPUtils.parseRtpParameters(mediaSection, sessionPart);
+        m.rtpEncodingParameters = SDPUtils.parseRtpEncodingParameters(mediaSection);
         m.rtcpParameters = SDPUtils.parseRtcpParameters(mediaSection, sessionPart);
         m.stream = SDPUtils.parseMsid(mediaSection); // may be undefined.
     } else if (kind === 'application' && m.protocol === 'DTLS/SCTP') {
@@ -55,7 +56,7 @@ function toSDP(json) {
     sdp += 'a=msid-semantic:WMS *\r\n';
     if (json.groups.length) {
         sdp += json.groups.map((g) => {
-            return 'a=group:' + g.semantics + ' ' + g.mids;
+            return 'a=group:' + g.semantics + ' ' + g.mids.join(' ');
         }).join('\r\n') + '\r\n';
     }
     sdp += json.media.map((m) => {
@@ -75,7 +76,7 @@ function toSDP(json) {
             SDPUtils.writeIceParameters(m.iceParameters) +
             SDPUtils.writeDtlsParameters(m.dtlsParameters, m.setup) +
             (m.candidates && m.candidates.length ? m.candidates.map(SDPUtils.writeCandidate).join('\r\n') + '\r\n' : '');
-    });
+    }).join('');
     return sdp;
 }
 
