@@ -40,7 +40,7 @@ window.RTCPeerConnection.prototype.createAnswer = function() {
 };
 
 /* we do not support .jingle in SLD as SDP munging will go away.
-var origSetLocalDescription = RTCPeerConnection.prototype.setLocalDescription;
+const origSetLocalDescription = RTCPeerConnection.prototype.setLocalDescription;
 window.RTCPeerConnection.prototype.setLocalDescription = function(desc) {
     const pc = this;
     if (pc._sdpSemantics === 'jingle' && desc.jingle) {
@@ -64,6 +64,17 @@ window.RTCPeerConnection.prototype.addIceCandidate = function(candidate) {
     const pc = this;
     if (candidate.jingle) {
         candidate.candidate = SDPUtils.writeCandidate(candidate.jingle);
+    }
+    // workaround: https://bugzilla.mozilla.org/show_bug.cgi?id=1456417
+    if (!candidate.sdpMLineIndex && pc.remoteDescription) {
+        const remoteSDP = pc.remoteDescription.sdp;
+        const mediaSections = SDPUtils.getMediaSections(remoteSDP);
+        for (let i = 0; i < mediaSections.length; i++) {
+            if (SDPUtils.getMid(mediaSections[i]) === candidate.sdpMid) {
+                candidate.sdpMLineIndex = i;
+                break;
+            }
+        }
     }
     return origAddIceCandidate.apply(pc, arguments);
 };
