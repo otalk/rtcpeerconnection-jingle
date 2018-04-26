@@ -45,6 +45,12 @@ function mediaSectionToJSON(mediaSection, sessionPart) {
         m.rtcpParameters = SDPUtils.parseRtcpParameters(mediaSection, sessionPart);
         m.stream = SDPUtils.parseMsid(mediaSection); // may be undefined.
     } else if (kind === 'application' && m.protocol === 'DTLS/SCTP') {
+        const parts = SDPUtils.matchPrefix(mediaSection, 'a=sctpmap:')[0].substr(10).split(' ');
+        m.sctp = {
+            number: parts[0],
+            protocol: parts[1],
+            streams: parts[2],
+        };
     }
     m.candidates = SDPUtils.matchPrefix(mediaSection, 'a=candidate:')
         .map(SDPUtils.parseCandidate);
@@ -60,14 +66,18 @@ function toSDP(json) {
         }).join('\r\n') + '\r\n';
     }
     sdp += json.media.map((m) => {
+        const isRejected = !(m.iceParameters && m.dtlsParameters);
         let str = '';
         if (m.kind === 'application' && m.protocol === 'DTLS/SCTP') {
-            str += 'm=application 9 DTLS/SCTP 5000\r\n' +
+            str += 'm=application 9 DTLS/SCTP ' + m.sctp.number + '\r\n' +
                 'c=IN IP4 0.0.0.0\r\n' +
-                'a=sctpmap:5000 webrtc-datachannel 256\r\n';
+                'a=sctpmap:' + m.sctp.number + ' ' + m.sctp.protocol + ' ' + m.sctp.streams + '\r\n';
         } else {
-            str += SDPUtils.writeRtpDescription(m.kind, m.rtpParameters) +
-                'a=' + (m.direction || 'sendrecv') + '\r\n';
+            str += SDPUtils.writeRtpDescription(m.kind, m.rtpParameters);
+            if (isRejected) {
+                str = str.replace('m=' + m.kind + ' 9 ', 'm=' + m.kind + ' 0 ');
+            }
+            str += 'a=' + (m.direction || 'sendrecv') + '\r\n';
             if (m.stream) {
                 str += 'a=msid:' + m.stream.stream + ' ' + m.stream.track + '\r\n';
             }
@@ -80,9 +90,9 @@ function toSDP(json) {
             }
         }
         return str +
-            'a=mid:' + m.mid + '\r\n' +
-            SDPUtils.writeIceParameters(m.iceParameters) +
-            SDPUtils.writeDtlsParameters(m.dtlsParameters, m.setup) +
+            (!isRejected ? 'a=mid:' + m.mid + '\r\n' : '') +
+            (m.iceParameters ? SDPUtils.writeIceParameters(m.iceParameters) : '') + 
+            (m.dtlsParameters ? SDPUtils.writeDtlsParameters(m.dtlsParameters, m.setup) : '') +
             (m.candidates && m.candidates.length ? m.candidates.map(SDPUtils.writeCandidate).join('\r\n') + '\r\n' : '');
     }).join('');
     return sdp;

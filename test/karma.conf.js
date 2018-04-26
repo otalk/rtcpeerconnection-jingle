@@ -50,15 +50,22 @@ const chromeFlags = [
 module.exports = function(config) {
   config.set({
     basePath: '..',
+    client: {
+      mocha: {
+        timeout: 5000, // set timeout to 5 seconds.
+      },
+    },
     frameworks: ['browserify', 'mocha', 'chai'],
     files: [
+      'node_modules/webrtc-adapter/out/adapter.js',
       'rtcpeerconnection.js',
       'test/getusermedia-mocha.js',
       'test/e2e/*.js',
     ],
     exclude: [],
     preprocessors: {
-      'rtcpeerconnection.js': ['browserify']
+      'rtcpeerconnection.js': ['browserify'],
+      'test/e2e/jxt.js': ['browserify']
     },
     reporters: ['mocha'],
     port: 9876,
