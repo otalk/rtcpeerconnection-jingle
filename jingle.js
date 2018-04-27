@@ -56,7 +56,7 @@ function rtp2jingle(media, role) {
         }]: undefined,
         payloads: media.rtpParameters.codecs.map((codec) => {
             return {
-                id: codec.payloadType,
+                id: codec.payloadType.toString(),
                 name: codec.name,
                 clockrate: codec.clockRate,
                 channels: codec.numChannels,
@@ -84,6 +84,7 @@ function transport2jingle(media) {
         candidates: media.candidates, // FIXME: map to jingle (no-op?)
         fingerprints: media.dtlsParameters ? media.dtlsParameters.fingerprints.map((fp) => {
             fp.setup = media.setup;
+            fp.hash = fp.algorithm;
             return fp;
         }) : undefined,
         ufrag: media.iceParameters ? media.iceParameters.usernameFragment : undefined,
@@ -98,7 +99,10 @@ function json2jingle(json, role) {
     return {
         sessionId: 'some-sid',
         sessionVersion: 123,
-        groups: json.groups, 
+        groups: json.groups ? json.groups.map((group) => {
+            group.contents = group.mids;
+            return group;
+        }) : undefined, 
         contents: json.media.map((media) => {
             const isRTP = media.kind === 'audio' || media.kind === 'video';
             return {
@@ -114,7 +118,10 @@ function json2jingle(json, role) {
 
 function jingle2json(jingle, role) {
     return {
-        groups: jingle.groups,
+        groups: jingle.groups ? jingle.groups.map((group) => {
+            group.mids = group.contents;
+            return group;
+        }) : undefined,
         media: jingle.contents.map((content) => {
             const isDataChannel = content.application && content.application.applicationType === 'datachannel';
             return {
@@ -126,7 +133,10 @@ function jingle2json(jingle, role) {
                     password: content.transport.pwd,
                 } : undefined,
                 dtlsParameters: content.transport && content.transport.fingerprints ? {
-                    fingerprints: content.transport.fingerprints,
+                    fingerprints: content.transport.fingerprints.map((fp) => {
+                        fp.algorithm = fp.hash;
+                        return fp;
+                    })
                 } : undefined,
                 setup: content.transport && content.transport.fingerprints ? content.transport.fingerprints[0].setup : undefined,
 
@@ -141,16 +151,16 @@ function jingle2json(jingle, role) {
                             name: payload.name,
                             clockRate: payload.clockrate,
                             numChannels: payload.channels,
-                            rtcpFeedback: payload.feedback.map((rtcpFeedback) => {
+                            rtcpFeedback: payload.feedback ? payload.feedback.map((rtcpFeedback) => {
                                 return {
                                     type: rtcpFeedback.type,
                                     parameter: rtcpFeedback.subtype,
                                 };
-                            }),
-                            parameters: payload.parameters.reduce((currentSet, keyval) => {
+                            }) : undefined,
+                            parameters: payload.parameters ? payload.parameters.reduce((currentSet, keyval) => {
                                 currentSet[keyval.key] = keyval.value;
                                 return currentSet;
-                            }, {}),
+                            }, {}) : undefined,
                         };
                     }),
                     headerExtensions: content.application.headerExtensions.map((ext) => {
