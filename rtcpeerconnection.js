@@ -6,10 +6,14 @@ const transform = require('./transform');
 // TODO: RTCЅessionDescription is readonly in theory...
 const origRTCPeerConnection = window.RTCPeerConnection;
 window.RTCPeerConnection = function(pcConfig, pcConstraints) {
-    const pc = new origRTCPeerConnection(pcConfig, pcConstraints);
+    let isJingle = false;
     if (pcConfig && pcConfig.sdpSemantics === 'jingle') {
-        pc._sdpSemantics = pcConfig.sdpSemantics;
+        isJingle = true;
         delete pcConfig.sdpSemantics;
+    }
+    const pc = new origRTCPeerConnection(pcConfig, pcConstraints);
+    if (isJingle) {
+        pc._sdpSemantics = 'jingle';
     }
     return pc;
 }
