@@ -1,4 +1,4 @@
-const J = require('../../jingle');
+const { json2jingle, jingle2json, candidate2jingle } = require('../../jingle');
 
 const testcases = [
     {localMedia: {audio: true}, offerOptions: {}},
@@ -28,15 +28,15 @@ describe('session establishment with JXT mapping', () => {
     let pc;
     let pc2;
     beforeEach(() => {
-        pc = new RTCPeerConnection({sdpSemantics: 'jingle'});
-        pc2 = new RTCPeerConnection({sdpSemantics: 'jingle'});
+        pc = new RTCPeerConnection({sdpSemantics: 'json'});
+        pc2 = new RTCPeerConnection({sdpSemantics: 'json'});
         pc.onicecandidate = (e) => {
             if (!e.candidate) {
                 // TODO: handle end of candidate.
                 return;
             }
-            const jingle = J.candidate2jingle(e.candidate);
-            pc2.addIceCandidate({sdpMid: jingle.contents[0].name, jingle: jingle.contents[0].transport.candidates[0]})
+            const jingle = candidate2jingle(e.candidate);
+            pc2.addIceCandidate({sdpMid: jingle.contents[0].name, json: jingle.contents[0].transport.candidates[0]})
                 .catch(e => console.error('ADDICECANDIDATE', e.name));
         };
         pc2.onicecandidate = (e) => {
@@ -44,8 +44,8 @@ describe('session establishment with JXT mapping', () => {
                 // TODO: handle end of candidate.
                 return;
             }
-            const jingle = J.candidate2jingle(e.candidate);
-            pc.addIceCandidate({sdpMid: jingle.contents[0].name, jingle: jingle.contents[0].transport.candidates[0]})
+            const jingle = candidate2jingle(e.candidate);
+            pc.addIceCandidate({sdpMid: jingle.contents[0].name, json: jingle.contents[0].transport.candidates[0]})
                 .catch(e => console.error('ADDICECANDIDATE', e.name));
         };
     });
@@ -71,9 +71,9 @@ describe('session establishment with JXT mapping', () => {
                 p
                 .then(() => pc.createOffer(testcase.offerOptions))
                 .then((offer) => {
-                    const jingle = J.json2jingle(offer.jingle, 'initiator');
-                    const json = J.jingle2json(jingle, 'responder');
-                    return pc2.setRemoteDescription({type: 'offer', jingle: json})
+                    const jingle = json2jingle(offer.json, 'initiator');
+                    const json = jingle2json(jingle, 'responder');
+                    return pc2.setRemoteDescription({type: 'offer', json})
                         .then(() => pc.setLocalDescription(offer))
                 })
                 .then(() => {
@@ -86,9 +86,9 @@ describe('session establishment with JXT mapping', () => {
                     return pc2.createAnswer();
                 })
                 .then((answer) => {
-                    const jingle = J.json2jingle(answer.jingle, 'responder');
-                    const json = J.jingle2json(jingle, 'initiator');
-                    return pc.setRemoteDescription({type: 'answer', jingle: json})
+                    const jingle = json2jingle(answer.json, 'responder');
+                    const json = jingle2json(jingle, 'initiator');
+                    return pc.setRemoteDescription({type: 'answer', json})
                         .then(() => pc2.setLocalDescription(answer))
                 })
                 .then(() => {
@@ -110,18 +110,18 @@ describe('session establishment with JXT mapping', () => {
             pc.createDataChannel('test');
             pc.createOffer()
             .then((offer) => {
-                const jingle = J.json2jingle(offer.jingle, 'initiator');
-                const json = J.jingle2json(jingle, 'responder');
-                return pc2.setRemoteDescription({type: 'offer', jingle: json})
+                const jingle = json2jingle(offer.json, 'initiator');
+                const json = jingle2json(jingle, 'responder');
+                return pc2.setRemoteDescription({type: 'offer', json})
                     .then(() => pc.setLocalDescription(offer))
             })
             .then(() => {
                 return pc2.createAnswer();
             })
             .then((answer) => {
-                const jingle = J.json2jingle(answer.jingle, 'responder');
-                const json = J.jingle2json(jingle, 'initiator');
-                return pc.setRemoteDescription({type: 'answer', jingle: json})
+                const jingle = json2jingle(answer.json, 'responder');
+                const json = jingle2json(jingle, 'initiator');
+                return pc.setRemoteDescription({type: 'answer', json})
                     .then(() => pc2.setLocalDescription(answer))
             })
             .then(() => {
