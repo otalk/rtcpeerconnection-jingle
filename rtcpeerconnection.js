@@ -7,13 +7,13 @@ const transform = require('./transform');
 const origRTCPeerConnection = window.RTCPeerConnection;
 window.RTCPeerConnection = function(pcConfig, pcConstraints) {
     let isJingle = false;
-    if (pcConfig && pcConfig.sdpSemantics === 'jingle') {
+    if (pcConfig && pcConfig.sdpSemantics === 'json') {
         isJingle = true;
         delete pcConfig.sdpSemantics;
     }
     const pc = new origRTCPeerConnection(pcConfig, pcConstraints);
     if (isJingle) {
-        pc._sdpSemantics = 'jingle';
+        pc._sdpSemantics = 'json';
     }
     return pc;
 }
@@ -24,8 +24,8 @@ window.RTCPeerConnection.prototype.createOffer = function(opts) {
     const pc = this;
     return origCreateOffer.apply(pc, [opts])
         .then(function(offer) {
-            if (pc._sdpSemantics === 'jingle') {
-                offer.jingle = transform.toJSON(offer.sdp);
+            if (pc._sdpSemantics === 'json') {
+                offer.json = transform.toJSON(offer.sdp);
             }
             return offer;
         });
@@ -36,19 +36,19 @@ window.RTCPeerConnection.prototype.createAnswer = function() {
     const pc = this;
     return origCreateAnswer.apply(pc, [])
         .then(function(answer) {
-            if (pc._sdpSemantics === 'jingle') {
-                answer.jingle = transform.toJSON(answer.sdp);
+            if (pc._sdpSemantics === 'json') {
+                answer.json = transform.toJSON(answer.sdp);
             }
             return answer;
         });
 };
 
-/* we do not support .jingle in SLD as SDP munging will go away.
+/* we do not support .json in SLD as SDP munging will go away.
 const origSetLocalDescription = RTCPeerConnection.prototype.setLocalDescription;
 window.RTCPeerConnection.prototype.setLocalDescription = function(desc) {
     const pc = this;
-    if (pc._sdpSemantics === 'jingle' && desc.jingle) {
-        desc.sdp = transform.toSDP(desc.jingle);
+    if (pc._sdpSemantics === 'json' && desc.json) {
+        desc.sdp = transform.toSDP(desc.json);
     }
     return origSetLocalDescription.apply(pc, arguments);
 };
@@ -57,8 +57,8 @@ window.RTCPeerConnection.prototype.setLocalDescription = function(desc) {
 const origSetRemoteDescription = RTCPeerConnection.prototype.setRemoteDescription;
 window.RTCPeerConnection.prototype.setRemoteDescription = function(desc) {
     const pc = this;
-    if (pc._sdpSemantics === 'jingle' && desc.jingle) {
-        desc.sdp = transform.toSDP(desc.jingle);
+    if (pc._sdpSemantics === 'json' && desc.json) {
+        desc.sdp = transform.toSDP(desc.json);
     }
     return origSetRemoteDescription.apply(pc, arguments);
 };
@@ -66,8 +66,8 @@ window.RTCPeerConnection.prototype.setRemoteDescription = function(desc) {
 const origAddIceCandidate = RTCPeerConnection.prototype.addIceCandidate;
 window.RTCPeerConnection.prototype.addIceCandidate = function(candidate) {
     const pc = this;
-    if (candidate.jingle) {
-        candidate.candidate = SDPUtils.writeCandidate(candidate.jingle);
+    if (candidate.json) {
+        candidate.candidate = SDPUtils.writeCandidate(candidate.json);
     }
     // workaround: https://bugzilla.mozilla.org/show_bug.cgi?id=1456417
     if (!candidate.sdpMLineIndex && pc.remoteDescription) {
@@ -86,7 +86,7 @@ window.RTCPeerConnection.prototype.addIceCandidate = function(candidate) {
 wrapPeerConnectionEvent(window, 'icecandidate', (e) => {
     // TODO: what about the theoretical e.candidate.candidate === ""?
     if (e.candidate) {
-        e.candidate.jingle = SDPUtils.parseCandidate(e.candidate.candidate);
+        e.candidate.json = SDPUtils.parseCandidate(e.candidate.candidate);
     }
     return e;
 });

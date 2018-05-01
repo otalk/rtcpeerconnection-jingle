@@ -18,8 +18,8 @@ describe('RTP media', () => {
     let pc2;
 
     beforeEach(() => {
-        pc1 = new RTCPeerConnection({sdpSemantics: 'jingle'});
-        pc2 = new RTCPeerConnection({sdpSemantics: 'jingle'});
+        pc1 = new RTCPeerConnection({sdpSemantics: 'json'});
+        pc2 = new RTCPeerConnection({sdpSemantics: 'json'});
     });
     afterEach(() => {
         pc1.close();

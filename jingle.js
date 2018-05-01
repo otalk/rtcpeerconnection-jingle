@@ -191,9 +191,9 @@ function candidate2jingle(candidate) {
             name: candidate.sdpMid,
             transport: {
                 transportType: 'iceUdp',
-                ufrag: candidate.jingle.usernameFragment || undefined,
+                ufrag: candidate.json.usernameFragment || undefined,
                 candidates: [
-                    candidate.jingle,
+                    candidate.json,
                 ],
             },
         }]
