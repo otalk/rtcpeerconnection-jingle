@@ -74,7 +74,12 @@ function rtp2jingle(media, role) {
                 }),
             }
         }),
-        stream: media.stream, // TODO: define jingle mapping for msid
+        streams: media.streams.map((stream) => {
+            return {
+                id: stream.stream,
+                track: stream.track
+            };
+        }),
     };
 }
 
@@ -124,6 +129,7 @@ function jingle2json(jingle, role) {
         }) : undefined,
         media: jingle.contents.map((content) => {
             const isDataChannel = content.application && content.application.applicationType === 'datachannel';
+            const isRtp = content.application && content.application.applicationType === 'rtp';
             return {
                 mid: content.name,
                 kind: content.application.media || 'application',
@@ -143,8 +149,13 @@ function jingle2json(jingle, role) {
                 mux: content.mux,
                 reducedSize: content.reducedSize,
                 direction: sendersToDirection[role][content.senders],
-                stream: content.application.stream,
-                rtpParameters: content.application.applicationType === 'rtp' ? {
+                streams: isRtp && content.application.streams ? content.application.streams.map((stream) => {
+                    return {
+                        stream: stream.id,
+                        track: stream.track,
+                    };
+                }) : undefined,
+                rtpParameters: isRtp ? {
                     codecs: content.application.payloads.map((payload) => {
                         return {
                             payloadType: payload.id,
@@ -171,11 +182,11 @@ function jingle2json(jingle, role) {
                         };
                     }),
                 } : undefined,
-                rtcpParameters: content.application.applicationType === 'rtp' ? {
+                rtcpParameters: isRtp ? {
                     ssrc: content.application.sources[0].ssrc,
                     cname: content.application.sources[0].parameters.find((p) => p.key === 'cname').value,
                 } : undefined,
-                rtpEncodingParameters: content.application.applicationType === 'rtp' ? [{
+                rtpEncodingParameters: isRtp ? [{
                     ssrc: content.application.ssrc,
                     rtx: content.application.sourceGroups ? {ssrc: content.application.sourceGroups[0].sources[1]} : undefined, // TODO: actually look for a FID one with matching ssrc
                 }] : undefined,
