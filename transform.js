@@ -43,7 +43,12 @@ function mediaSectionToJSON(mediaSection, sessionPart) {
         m.rtpParameters = SDPUtils.parseRtpParameters(mediaSection, sessionPart);
         m.rtpEncodingParameters = SDPUtils.parseRtpEncodingParameters(mediaSection);
         m.rtcpParameters = SDPUtils.parseRtcpParameters(mediaSection, sessionPart);
-        m.stream = SDPUtils.parseMsid(mediaSection); // may be undefined.
+        const msid = SDPUtils.parseMsid(mediaSection);
+        if (msid) {
+            m.streams = [msid];
+        } else {
+            m.streams = [];
+        }
     } else if (kind === 'application' && m.protocol === 'DTLS/SCTP') {
         const parts = SDPUtils.matchPrefix(mediaSection, 'a=sctpmap:')[0].substr(10).split(' ');
         m.sctp = {
@@ -78,8 +83,10 @@ function toSDP(json) {
                 str = str.replace('m=' + m.kind + ' 9 ', 'm=' + m.kind + ' 0 ');
             }
             str += 'a=' + (m.direction || 'sendrecv') + '\r\n';
-            if (m.stream) {
-                str += 'a=msid:' + m.stream.stream + ' ' + m.stream.track + '\r\n';
+            if (m.streams) {
+                m.streams.forEach((stream) => {
+                    str += 'a=msid:' + stream.stream + ' ' + stream.track + '\r\n';
+                });
             }
             if (m.rtcpParameters.cname) {
                 str += 'a=ssrc:' + m.rtcpParameters.ssrc + ' cname:' + m.rtcpParameters.cname + '\r\n';
