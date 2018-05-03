@@ -30,6 +30,7 @@ const sendersToDirection = {
 };
 
 function rtp2jingle(media, role) {
+    const hasSsrc = media.rtpEncodingParameters.length && media.rtpEncodingParameters[0].ssrc !== false;
     return {
         applicationType: 'rtp',
         media: media.kind,
@@ -42,15 +43,15 @@ function rtp2jingle(media, role) {
         }),
         mux: media.rtcpParameters.mux,
         reducedSize: media.rtcpParameters.reducedSize, // TODO: define mapping to jingle
-        ssrc: media.rtpEncodingParameters.length ? media.rtpEncodingParameters[0].ssrc : undefined,
-        sources: [{
+        ssrc: hasSsrc ? media.rtpEncodingParameters[0].ssrc : undefined,
+        sources: media.rtcpParameters.ssrc && media.rtcpParameters.cname ? [{
             ssrc: media.rtcpParameters.ssrc,
             parameters: [{
                 key: 'cname',
                 value: media.rtcpParameters.cname,
             }],
-        }],
-        sourceGroups: media.rtpEncodingParameters.length && media.rtpEncodingParameters[0].rtx ? [{
+        }] : undefined,
+        sourceGroups: hasSsrc && media.rtpEncodingParameters[0].rtx ? [{
             semantics: 'FID',
             sources: [media.rtpEncodingParameters[0].ssrc, media.rtpEncodingParameters[0].rtx.ssrc],
         }]: undefined,
@@ -182,7 +183,7 @@ function jingle2json(jingle, role) {
                         };
                     }),
                 } : undefined,
-                rtcpParameters: isRtp ? {
+                rtcpParameters: isRtp && content.application.sources ? {
                     ssrc: content.application.sources[0].ssrc,
                     cname: content.application.sources[0].parameters.find((p) => p.key === 'cname').value,
                 } : undefined,

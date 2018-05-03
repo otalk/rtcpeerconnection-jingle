@@ -88,7 +88,7 @@ function toSDP(json) {
                     str += 'a=msid:' + stream.stream + ' ' + stream.track + '\r\n';
                 });
             }
-            if (m.rtcpParameters.cname) {
+            if (m.rtcpParameters && m.rtcpParameters.cname) {
                 str += 'a=ssrc:' + m.rtcpParameters.ssrc + ' cname:' + m.rtcpParameters.cname + '\r\n';
                 if (m.rtpEncodingParameters[0].rtx) {
                     str += 'a=ssrc-group:FID ' + m.rtpEncodingParameters[0].ssrc + ' ' + m.rtpEncodingParameters[0].rtx.ssrc  + '\r\n' +
