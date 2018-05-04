@@ -66,17 +66,19 @@ window.RTCPeerConnection.prototype.setRemoteDescription = function(desc) {
 const origAddIceCandidate = RTCPeerConnection.prototype.addIceCandidate;
 window.RTCPeerConnection.prototype.addIceCandidate = function(candidate) {
     const pc = this;
-    if (candidate.json) {
-        candidate.candidate = SDPUtils.writeCandidate(candidate.json);
-    }
-    // workaround: https://bugzilla.mozilla.org/show_bug.cgi?id=1456417
-    if (!candidate.sdpMLineIndex && pc.remoteDescription) {
-        const remoteSDP = pc.remoteDescription.sdp;
-        const mediaSections = SDPUtils.getMediaSections(remoteSDP);
-        for (let i = 0; i < mediaSections.length; i++) {
-            if (SDPUtils.getMid(mediaSections[i]) === candidate.sdpMid) {
-                candidate.sdpMLineIndex = i;
-                break;
+    if (candidate) {
+        if (candidate.json) {
+            candidate.candidate = SDPUtils.writeCandidate(candidate.json);
+        }
+        // workaround: https://bugzilla.mozilla.org/show_bug.cgi?id=1456417
+        if (!candidate.sdpMLineIndex && pc.remoteDescription) {
+            const remoteSDP = pc.remoteDescription.sdp;
+            const mediaSections = SDPUtils.getMediaSections(remoteSDP);
+            for (let i = 0; i < mediaSections.length; i++) {
+                if (SDPUtils.getMid(mediaSections[i]) === candidate.sdpMid) {
+                    candidate.sdpMLineIndex = i;
+                    break;
+                }
             }
         }
     }
