@@ -34,13 +34,13 @@ function rtp2jingle(media, role) {
     return {
         applicationType: 'rtp',
         media: media.kind,
-        headerExtensions: media.rtpParameters.headerExtensions.map((ext) => {
+        headerExtensions: media.rtpParameters.headerExtensions ? media.rtpParameters.headerExtensions.map((ext) => {
             return {
                 id: ext.id,
                 uri: ext.uri,
                 senders: ext.direction && ext.direction !== 'sendrecv' ? directionToSenders[role][ext.direction] : undefined,
             }
-        }),
+        }) : undefined,
         mux: media.rtcpParameters.mux,
         reducedSize: media.rtcpParameters.reducedSize, // TODO: define mapping to jingle
         ssrc: hasSsrc ? media.rtpEncodingParameters[0].ssrc : undefined,
@@ -175,13 +175,13 @@ function jingle2json(jingle, role) {
                             }, {}) : undefined,
                         };
                     }),
-                    headerExtensions: content.application.headerExtensions.map((ext) => {
+                    headerExtensions: content.application.headerExtensions ? content.application.headerExtensions.map((ext) => {
                         return {
                             id: ext.id,
                             uri: ext.uri,
                             direction: ext.senders && ext.senders !== 'both' ? sendersToDirection[role][content.senders] : undefined,
                         };
-                    }),
+                    }) : [],
                 } : undefined,
                 rtcpParameters: isRtp && content.application.sources ? {
                     ssrc: content.application.sources[0].ssrc,
