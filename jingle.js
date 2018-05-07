@@ -84,10 +84,20 @@ function rtp2jingle(media, role) {
     };
 }
 
+function _candidate2jingle(candidate) {
+    if (candidate.relatedAddress) {
+        candidate.relAddr = candidate.relatedAddress;
+    }
+    if (candidate.relatedPort) {
+        candidate.relPort = candidate.relatedPort;
+    }
+    return candidate;
+}
+
 function transport2jingle(media) {
     return {
         transportType: 'iceUdp',
-        candidates: media.candidates, // FIXME: map to jingle (no-op?)
+        candidates: media.candidates ? media.candidates.map(_candidate2jingle) : undefined,
         fingerprints: media.dtlsParameters ? media.dtlsParameters.fingerprints.map((fp) => {
             fp.setup = media.setup;
             fp.hash = fp.algorithm;
@@ -205,7 +215,7 @@ function candidate2jingle(candidate) {
                 transportType: 'iceUdp',
                 ufrag: candidate.json.usernameFragment || undefined,
                 candidates: [
-                    candidate.json,
+                    _candidate2jingle(candidate.json),
                 ],
             },
         }]
@@ -217,5 +227,5 @@ module.exports = {
 	transport2jingle,
 	json2jingle,
 	jingle2json,
-	candidate2jingle,
+	candidate2jingle
 };
