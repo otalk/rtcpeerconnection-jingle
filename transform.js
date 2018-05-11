@@ -100,7 +100,7 @@ function toSDP(json) {
             (!isRejected ? 'a=mid:' + m.mid + '\r\n' : '') +
             (m.iceParameters ? SDPUtils.writeIceParameters(m.iceParameters) : '') + 
             (m.dtlsParameters ? SDPUtils.writeDtlsParameters(m.dtlsParameters, m.setup) : '') +
-            (m.candidates && m.candidates.length ? m.candidates.map(SDPUtils.writeCandidate).join('\r\n') + '\r\n' : '');
+            (m.candidates && m.candidates.length ? m.candidates.map((c) => 'a=' + SDPUtils.writeCandidate(c)).join('\r\n') + '\r\n' : '');
     }).join('');
     return sdp;
 }
