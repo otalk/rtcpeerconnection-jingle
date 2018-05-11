@@ -23,9 +23,13 @@ const origCreateOffer = RTCPeerConnection.prototype.createOffer;
 window.RTCPeerConnection.prototype.createOffer = function(opts) {
     const pc = this;
     return origCreateOffer.apply(pc, [opts])
-        .then(function(offer) {
+        .then((offer) => {
             if (pc._sdpSemantics === 'json') {
-                offer.json = transform.toJSON(offer.sdp);
+                return {
+                    type: offer.type,
+                    sdp: offer.sdp,
+                    json: transform.toJSON(offer.sdp)
+                };
             }
             return offer;
         });
@@ -35,9 +39,13 @@ const origCreateAnswer = RTCPeerConnection.prototype.createAnswer;
 window.RTCPeerConnection.prototype.createAnswer = function() {
     const pc = this;
     return origCreateAnswer.apply(pc, [])
-        .then(function(answer) {
+        .then((answer) => {
             if (pc._sdpSemantics === 'json') {
-                answer.json = transform.toJSON(answer.sdp);
+                return {
+                    type: answer.type,
+                    sdp: answer.sdp,
+                    json: transform.toJSON(answer.sdp)
+                };
             }
             return answer;
         });
@@ -99,7 +107,11 @@ wrapPeerConnectionEvent(window, 'icecandidate', (e) => {
         get: function() {
             const desc = origGetter.apply(this);
             if (this._sdpSemantics === 'json' && desc.sdp !== '') {
-                desc.json = transform.toJSON(desc.sdp);
+                return {
+                    type: desc.type,
+                    sdp: desc.sdp,
+                    json: transform.toJSON(desc.sdp)
+                };
             }
             return desc;
         }
