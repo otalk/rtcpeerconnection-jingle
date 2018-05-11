@@ -92,3 +92,16 @@ wrapPeerConnectionEvent(window, 'icecandidate', (e) => {
     }
     return e;
 });
+
+['localDescription', 'remoteDescription'].forEach((property) => {
+    const origGetter = Object.getOwnPropertyDescriptor(RTCPeerConnection.prototype, property).get
+    Object.defineProperty(RTCPeerConnection.prototype, property, {
+        get: function() {
+            const desc = origGetter.apply(this);
+            if (this._sdpSemantics === 'json' && desc.sdp !== '') {
+                desc.json = transform.toJSON(desc.sdp);
+            }
+            return desc;
+        }
+    });
+});
