@@ -65,6 +65,9 @@ function mediaSectionToJSON(mediaSection, sessionPart) {
 function toSDP(json) {
     let sdp = SDPUtils.writeSessionBoilerplate(json.sessionId, json.sessionVersion);
     sdp += 'a=msid-semantic:WMS *\r\n';
+    if (json.iceLite) {
+        sdp += 'a=ice-lite\r\n';
+    }
     if (json.groups.length) {
         sdp += json.groups.map((g) => {
             return 'a=group:' + g.semantics + ' ' + g.mids.join(' ');
