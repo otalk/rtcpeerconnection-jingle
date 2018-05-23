@@ -1,27 +1,4 @@
-const SDPUtils = require('sdp');
-
-function toJSON(sdp) {
-    const mediaSections = SDPUtils.splitSections(sdp);
-    const sessionPart = mediaSections.shift();
-    const description = {
-        media: [],
-        groups: [],
-    };
-    SDPUtils.matchPrefix(sessionPart, 'a=group:').forEach((groupLine) => {
-        const parts = groupLine.split(' ');
-        const semantics = parts.shift().substr(8);
-        description.groups.push({
-            semantics,
-            mids: parts,
-        });
-    });
-
-    mediaSections.forEach((mediaSection) => {
-        const mediaJSON = mediaSectionToJSON(mediaSection, sessionPart);
-        description.media.push(mediaJSON);
-    });
-    return description;
-}
+import * as SDPUtils from 'sdp';
 
 function mediaSectionToJSON(mediaSection, sessionPart) {
     const kind = SDPUtils.getKind(mediaSection);
@@ -62,7 +39,31 @@ function mediaSectionToJSON(mediaSection, sessionPart) {
     return m;
 }
 
-function toSDP(json) {
+export function toJSON(sdp) {
+    const mediaSections = SDPUtils.splitSections(sdp);
+    const sessionPart = mediaSections.shift();
+    const description = {
+        media: [],
+        groups: [],
+    };
+    SDPUtils.matchPrefix(sessionPart, 'a=group:').forEach((groupLine) => {
+        const parts = groupLine.split(' ');
+        const semantics = parts.shift().substr(8);
+        description.groups.push({
+            semantics,
+            mids: parts,
+        });
+    });
+
+    mediaSections.forEach((mediaSection) => {
+        const mediaJSON = mediaSectionToJSON(mediaSection, sessionPart);
+        description.media.push(mediaJSON);
+    });
+    return description;
+}
+
+
+export function toSDP(json) {
     let sdp = SDPUtils.writeSessionBoilerplate(json.sessionId, json.sessionVersion);
     sdp += 'a=msid-semantic:WMS *\r\n';
     if (json.iceLite) {
@@ -94,21 +95,16 @@ function toSDP(json) {
             if (m.rtcpParameters && m.rtcpParameters.cname) {
                 str += 'a=ssrc:' + m.rtcpParameters.ssrc + ' cname:' + m.rtcpParameters.cname + '\r\n';
                 if (m.rtpEncodingParameters[0].rtx) {
-                    str += 'a=ssrc-group:FID ' + m.rtpEncodingParameters[0].ssrc + ' ' + m.rtpEncodingParameters[0].rtx.ssrc  + '\r\n' +
+                    str += 'a=ssrc-group:FID ' + m.rtpEncodingParameters[0].ssrc + ' ' + m.rtpEncodingParameters[0].rtx.ssrc + '\r\n' +
                         'a=ssrc:' + m.rtpEncodingParameters[0].rtx.ssrc + ' cname:' + m.rtcpParameters.cname + '\r\n';
                 }
             }
         }
         return str +
             (m.mid !== undefined ? 'a=mid:' + m.mid + '\r\n' : '') +
-            (m.iceParameters ? SDPUtils.writeIceParameters(m.iceParameters) : '') + 
+            (m.iceParameters ? SDPUtils.writeIceParameters(m.iceParameters) : '') +
             (m.dtlsParameters ? SDPUtils.writeDtlsParameters(m.dtlsParameters, m.setup) : '') +
             (m.candidates && m.candidates.length ? m.candidates.map((c) => 'a=' + SDPUtils.writeCandidate(c)).join('\r\n') + '\r\n' : '');
     }).join('');
     return sdp;
 }
-
-module.exports = {
-    toJSON,
-    toSDP,
-};
