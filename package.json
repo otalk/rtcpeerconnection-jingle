@@ -2,10 +2,11 @@
   "name": "rtcpeerconnection-jingle",
   "version": "1.2.0",
   "description": "RTCPeerConnection with Jingle O/A",
-  "main": "rtcpeerconnection.js",
-  "module": "rtcpeerconnection.js",
+  "main": "./rtcpeerconnection.js",
   "scripts": {
-    "test": "karma start test/karma.conf.js"
+    "test": "karma start test/karma.conf.js",
+    "build": "babel src --presets babel-preset-es2015 --out-dir .",
+    "prepublish": "npm run build"
   },
   "keywords": [
     "sdp",
@@ -14,6 +15,7 @@
   "author": "Philipp Hancke <fippo@andyet.net>",
   "license": "MIT",
   "devDependencies": {
+    "babel-cli": "^6.26.0",
     "babel-core": "^6.26.3",
     "babel-preset-es2015": "^6.24.1",
     "babelify": "^8.0.0",
