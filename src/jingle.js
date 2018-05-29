@@ -29,7 +29,7 @@ const sendersToDirection = {
     },
 };
 
-function rtp2jingle(media, role) {
+export function rtp2jingle(media, role) {
     const hasSsrc = media.rtpEncodingParameters.length && media.rtpEncodingParameters[0].ssrc !== false;
     return {
         applicationType: 'rtp',
@@ -39,7 +39,7 @@ function rtp2jingle(media, role) {
                 id: ext.id,
                 uri: ext.uri,
                 senders: ext.direction && ext.direction !== 'sendrecv' ? directionToSenders[role][ext.direction] : undefined,
-            }
+            };
         }) : undefined,
         mux: media.rtcpParameters.mux,
         reducedSize: media.rtcpParameters.reducedSize, // TODO: define mapping to jingle
@@ -54,7 +54,7 @@ function rtp2jingle(media, role) {
         sourceGroups: hasSsrc && media.rtpEncodingParameters[0].rtx ? [{
             semantics: 'FID',
             sources: [media.rtpEncodingParameters[0].ssrc, media.rtpEncodingParameters[0].rtx.ssrc],
-        }]: undefined,
+        }] : undefined,
         payloads: media.rtpParameters.codecs.map((codec) => {
             return {
                 id: codec.payloadType.toString(),
@@ -73,7 +73,7 @@ function rtp2jingle(media, role) {
                         value: codec.parameters[key]
                     };
                 }),
-            }
+            };
         }),
         streams: media.streams.map((stream) => {
             return {
@@ -94,7 +94,7 @@ function _candidate2jingle(candidate) {
     return candidate;
 }
 
-function transport2jingle(media) {
+export function transport2jingle(media) {
     return {
         transportType: 'iceUdp',
         candidates: media.candidates ? media.candidates.map(_candidate2jingle) : undefined,
@@ -111,14 +111,14 @@ function transport2jingle(media) {
     };
 }
 
-function json2jingle(json, role) {
+export function json2jingle(json, role) {
     return {
         sessionId: 'some-sid',
         sessionVersion: 123,
         groups: json.groups ? json.groups.map((group) => {
             group.contents = group.mids;
             return group;
-        }) : undefined, 
+        }) : undefined,
         contents: json.media.map((media) => {
             const isRTP = media.kind === 'audio' || media.kind === 'video';
             return {
@@ -132,7 +132,7 @@ function json2jingle(json, role) {
     };
 }
 
-function jingle2json(jingle, role) {
+export function jingle2json(jingle, role) {
     return {
         groups: jingle.groups ? jingle.groups.map((group) => {
             group.mids = group.contents;
@@ -144,7 +144,7 @@ function jingle2json(jingle, role) {
             return {
                 mid: content.name,
                 kind: content.application.media || 'application',
-                protocol: isDataChannel ? 'DTLS/SCTP' : undefined, 
+                protocol: isDataChannel ? 'DTLS/SCTP' : undefined,
                 iceParameters: content.transport && content.transport.ufrag ? {
                     usernameFragment: content.transport.ufrag,
                     password: content.transport.pwd,
@@ -207,7 +207,7 @@ function jingle2json(jingle, role) {
     };
 }
 
-function candidate2jingle(candidate) {
+export function candidate2jingle(candidate) {
     return {
         contents: [{
             name: candidate.sdpMid,
@@ -221,11 +221,3 @@ function candidate2jingle(candidate) {
         }]
     };
 }
-
-module.exports = {
-    rtp2jingle,
-	transport2jingle,
-	json2jingle,
-	jingle2json,
-	candidate2jingle
-};

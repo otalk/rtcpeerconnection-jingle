@@ -1,7 +1,7 @@
-const SDPUtils = require('sdp');
-const {wrapPeerConnectionEvent} = require('webrtc-adapter/src/js/utils');
+import * as SDPUtils from 'sdp';
+import * as utils from 'webrtc-adapter/src/js/utils';
 
-const transform = require('./transform');
+import {toSDP, toJSON} from './transform';
 
 // TODO: RTCЅessionDescription is readonly in theory...
 const origRTCPeerConnection = window.RTCPeerConnection;
@@ -16,7 +16,7 @@ window.RTCPeerConnection = function(pcConfig, pcConstraints) {
         pc._sdpSemantics = 'json';
     }
     return pc;
-}
+};
 window.RTCPeerConnection.prototype = origRTCPeerConnection.prototype;
 
 const origCreateOffer = RTCPeerConnection.prototype.createOffer;
@@ -28,7 +28,7 @@ window.RTCPeerConnection.prototype.createOffer = function(opts) {
                 return {
                     type: offer.type,
                     sdp: offer.sdp,
-                    json: transform.toJSON(offer.sdp)
+                    json: toJSON(offer.sdp)
                 };
             }
             return offer;
@@ -44,7 +44,7 @@ window.RTCPeerConnection.prototype.createAnswer = function() {
                 return {
                     type: answer.type,
                     sdp: answer.sdp,
-                    json: transform.toJSON(answer.sdp)
+                    json: toJSON(answer.sdp)
                 };
             }
             return answer;
@@ -56,7 +56,7 @@ const origSetLocalDescription = RTCPeerConnection.prototype.setLocalDescription;
 window.RTCPeerConnection.prototype.setLocalDescription = function(desc) {
     const pc = this;
     if (pc._sdpSemantics === 'json' && desc.json) {
-        desc.sdp = transform.toSDP(desc.json);
+        desc.sdp = toSDP(desc.json);
     }
     return origSetLocalDescription.apply(pc, arguments);
 };
@@ -66,7 +66,7 @@ const origSetRemoteDescription = RTCPeerConnection.prototype.setRemoteDescriptio
 window.RTCPeerConnection.prototype.setRemoteDescription = function(desc) {
     const pc = this;
     if (pc._sdpSemantics === 'json' && desc.json) {
-        desc.sdp = transform.toSDP(desc.json);
+        desc.sdp = toSDP(desc.json);
     }
     return origSetRemoteDescription.apply(pc, arguments);
 };
@@ -93,7 +93,7 @@ window.RTCPeerConnection.prototype.addIceCandidate = function(candidate) {
     return origAddIceCandidate.apply(pc, arguments);
 };
 
-wrapPeerConnectionEvent(window, 'icecandidate', (e) => {
+utils.wrapPeerConnectionEvent(window, 'icecandidate', (e) => {
     // TODO: what about the theoretical e.candidate.candidate === ""?
     if (e.candidate) {
         e.candidate.json = SDPUtils.parseCandidate(e.candidate.candidate);
@@ -102,7 +102,7 @@ wrapPeerConnectionEvent(window, 'icecandidate', (e) => {
 });
 
 ['localDescription', 'remoteDescription'].forEach((property) => {
-    const origGetter = Object.getOwnPropertyDescriptor(RTCPeerConnection.prototype, property).get
+    const origGetter = Object.getOwnPropertyDescriptor(RTCPeerConnection.prototype, property).get;
     Object.defineProperty(RTCPeerConnection.prototype, property, {
         get: function() {
             const desc = origGetter.apply(this);
@@ -110,7 +110,7 @@ wrapPeerConnectionEvent(window, 'icecandidate', (e) => {
                 return {
                     type: desc.type,
                     sdp: desc.sdp,
-                    json: transform.toJSON(desc.sdp)
+                    json: toJSON(desc.sdp)
                 };
             }
             return desc;
