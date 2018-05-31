@@ -4,7 +4,7 @@
   "description": "RTCPeerConnection with Jingle O/A",
   "main": "./rtcpeerconnection.js",
   "scripts": {
-    "test": "karma start test/karma.conf.js",
+    "test": "eslint src && karma start test/karma.conf.js",
     "build": "babel src --presets babel-preset-es2015 --out-dir .",
     "prepublish": "npm run build"
   },
