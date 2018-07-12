@@ -107,7 +107,7 @@ if (origRTCPeerConnection) {
         Object.defineProperty(RTCPeerConnection.prototype, property, {
             get: function() {
                 const desc = origGetter.apply(this);
-                if (this._sdpSemantics === 'json' && desc.sdp !== '') {
+                if (desc && this._sdpSemantics === 'json' && desc.sdp !== '') {
                     return {
                         type: desc.type,
                         sdp: desc.sdp,
