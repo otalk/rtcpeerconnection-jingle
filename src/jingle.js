@@ -156,7 +156,7 @@ export function jingle2json(jingle, role) {
                     })
                 } : undefined,
                 setup: content.transport && content.transport.fingerprints ? content.transport.fingerprints[0].setup : undefined,
-                candidates: content.transport && content.transport.candidates ?  content.transport.candidates.map(function (candidate) {
+                candidates: content.transport && content.transport.candidates ? content.transport.candidates.map(function (candidate) {
                     if (candidate.relAddr) {
                         candidate.relatedAddress = candidate.relAddr;
                     }
