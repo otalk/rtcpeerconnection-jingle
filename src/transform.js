@@ -19,6 +19,7 @@ function mediaSectionToJSON(mediaSection, sessionPart) {
     if (kind === 'audio' || kind === 'video') {
         m.rtpParameters = SDPUtils.parseRtpParameters(mediaSection, sessionPart);
         m.rtpEncodingParameters = SDPUtils.parseRtpEncodingParameters(mediaSection);
+        m.rtpEncodings = SDPUtils.parseRtpEncodings(mediaSection);
         m.rtcpParameters = SDPUtils.parseRtcpParameters(mediaSection, sessionPart);
         const msid = SDPUtils.parseMsid(mediaSection);
         if (msid) {
@@ -99,6 +100,7 @@ export function toSDP(json) {
                         'a=ssrc:' + m.rtpEncodingParameters[0].rtx.ssrc + ' cname:' + m.rtcpParameters.cname + '\r\n';
                 }
             }
+            str += (m.rtpEncodings ? SDPUtils.writeRtpEncodings(m.rtpEncodings) : '');
         }
         return str +
             (m.mid !== undefined ? 'a=mid:' + m.mid + '\r\n' : '') +
