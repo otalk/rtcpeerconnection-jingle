@@ -26,13 +26,8 @@ function mediaSectionToJSON(mediaSection, sessionPart) {
         } else {
             m.streams = [];
         }
-    } else if (kind === 'application' && m.protocol === 'DTLS/SCTP') {
-        const parts = SDPUtils.matchPrefix(mediaSection, 'a=sctpmap:')[0].substr(10).split(' ');
-        m.sctp = {
-            number: parts[0],
-            protocol: parts[1],
-            streams: parts[2],
-        };
+    } else if (kind === 'application' && m.protocol === 'UDP/DTLS/SCTP') {
+        m.sctp = SDPUtils.parseSctpDescription(mediaSection);
     }
     m.candidates = SDPUtils.matchPrefix(mediaSection, 'a=candidate:')
         .map(SDPUtils.parseCandidate);
@@ -77,10 +72,8 @@ export function toSDP(json) {
     sdp += json.media.map((m) => {
         const isRejected = !(m.iceParameters && m.dtlsParameters);
         let str = '';
-        if (m.kind === 'application' && m.protocol === 'DTLS/SCTP') {
-            str += 'm=application 9 DTLS/SCTP ' + m.sctp.number + '\r\n' +
-                'c=IN IP4 0.0.0.0\r\n' +
-                'a=sctpmap:' + m.sctp.number + ' ' + m.sctp.protocol + ' ' + m.sctp.streams + '\r\n';
+        if (m.kind === 'application' && m.protocol === 'UDP/DTLS/SCTP') {
+            str += SDPUtils.writeSctpDescription(m, m.sctp);
         } else {
             str += SDPUtils.writeRtpDescription(m.kind, m.rtpParameters);
             if (isRejected) {
