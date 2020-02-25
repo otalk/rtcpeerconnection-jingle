@@ -1,7 +1,7 @@
 describe('SCTP', () => {
     function negotiate(pc1, pc2) {
-        pc1.addEventListener('icecandidate', (e) => e.candidate && pc2.addIceCandidate(e.candidate));
-        pc2.addEventListener('icecandidate', (e) => e.candidate && pc1.addIceCandidate(e.candidate));
+        pc1.addEventListener('icecandidate', (e) => e.candidate && pc2.addIceCandidate(e.candidate ? {json: e.candidate.json, sdpMid: e.candidate.sdpMid, sdpMLineIndex: e.candidate.sdpMLineIndex} : undefined));
+        pc2.addEventListener('icecandidate', (e) => e.candidate && pc1.addIceCandidate(e.candidate ? {json: e.candidate.json, sdpMid: e.candidate.sdpMid, sdpMLineIndex: e.candidate.sdpMLineIndex} : undefined));
         return pc1.createOffer()
             .then(offer => Promise.all([
                 pc1.setLocalDescription(offer),
