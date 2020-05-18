@@ -12,6 +12,11 @@
     "sdp",
     "webrtc"
   ],
+
+  "browserify": {
+    "transform": ["babelify"]
+  },
+
   "author": "Philipp Hancke <fippo@andyet.net>",
   "license": "MIT",
   "devDependencies": {
