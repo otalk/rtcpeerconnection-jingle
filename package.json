@@ -1,6 +1,6 @@
 {
   "name": "rtcpeerconnection-jingle",
-  "version": "1.3.2",
+  "version": "1.4.0",
   "description": "RTCPeerConnection with Jingle O/A",
   "main": "./rtcpeerconnection.js",
   "scripts": {
